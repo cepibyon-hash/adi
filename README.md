@@ -1,0 +1,2 @@
+# adi
+ai penerjemah 

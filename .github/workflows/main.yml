@@ -1,0 +1,47 @@
+name: Build LINGUA AI APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ekstrak file ZIP proyek
+        run: |
+          for z in *.zip; do
+            [ -f "$z" ] && unzip -o "$z"
+          done
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - uses: android-actions/setup-android@v3
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Build Debug APK
+        run: |
+          BUILD_FILE=$(find . -maxdepth 3 -name "build.gradle.kts" -not -path "*/app/*" | head -n 1)
+          if [ -z "$BUILD_FILE" ]; then
+            echo "File ZIP proyek belum diupload ke repositori!"
+            exit 1
+          fi
+          PROJECT_DIR=$(dirname "$BUILD_FILE")
+          cd "$PROJECT_DIR"
+          gradle :app:assembleDebug --no-daemon --stacktrace
+          echo "APK_PATH=$PROJECT_DIR/app/build/outputs/apk/debug/app-debug.apk" >> $GITHUB_ENV
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LINGUA-AI-Debug-APK
+          path: ${{ env.APK_PATH }}
+          
